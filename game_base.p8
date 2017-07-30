@@ -1,42 +1,33 @@
 pico-8 cartridge // http://www.pico-8.com
-version 7
+version 8
 __lua__
--- BASE GAME
--- a base to start a game 
--- by misato 
-
-
--- State Machine 
+-- pico8 game template
+-- by misato
+-- with little changes
+-- by ltpitt
 
 -- game states
--- there are no enum in lua so followed the advice from here: https://www.allegro.cc/forums/thread/605178
 game_states = {
     splash = 0,
-    game = 1, 
-    gameover = 2
+    game = 1,
+    pause = 2,
+    gameover = 3
 }
 
 state = game_states.splash
 
-function change_state() 
-    cls()
-    if state == game_states.splash then   
-        state = game_states.game
-    elseif state == game_states.game then
-        state = game_states.gameover 
-    elseif state == game_states.gameover then
-        state = game_states.splash
-    end
+function change_state(new_state)
+ cls()
+ state = new_state
 end
 
--- Entities (aka Player, enemies, etc)
+-- entities
+entity = {}
+entity.__index = entity
 
-Entity = {}
-Entity.__index = Entity
-
-function Entity.create(x,y,w,h)
+function entity.create(x,y,w,h)
 	local new_entity = {}
-	setmetatable(new_entity, Entity)
+	setmetatable(new_entity, entity)
 
 	new_entity.x = x
 	new_entity.y = y
@@ -46,111 +37,123 @@ function Entity.create(x,y,w,h)
 	return new_entity
 end
 
-function Entity:collide(other_entity) 
-	return other_entity.x < self.x + self.w and self.x < other_entity.x + other_entity.w 
+function entity:collide(other_entity)
+	return other_entity.x < self.x + self.w and self.x < other_entity.x + other_entity.w
         and other_entity.y < self.y + self.h and self.y < other_entity.y + other_entity.h
 end
 
--- Add other vars as convenience to this player entity
+-- add other vars as convenience to this player entity
 -- for example, the sprite number or the lives left ;)
-player = Entity.create(0,0,8,8)
+player = entity.create(0,0,8,8)
 
--- Player input
-
+-- player input
 function handle_input()
-    -- left
-    if btn(0) then
-        player.x -= 1
-        if player.x < 0 then 
-            player.x = 0
-        end
-    end
-    -- right
-    if btn(1) then
-        player.x += 1
-        if player.x > 128 then
-            player.x = 128
-        end
-    end
-    -- up
-    if btn(2) then
-        player.y -= 1
-        if player.y < 0 then 
-            player.y = 0
-        end
-    end
-    -- down
-    if btn(3) then
-       player.y += 1
-        if player.y > 128 then
-            player.y = 128
-        end
-    end
+ -- left
+ if btn(0) then
+     player.x -= 1
+     if player.x < 0 then
+         player.x = 0
+     end
+ end
+ -- right
+ if btn(1) then
+     player.x += 1
+     if player.x > 128 then
+         player.x = 128
+     end
+ end
+ -- up
+ if btn(2) then
+     player.y -= 1
+     if player.y < 0 then
+         player.y = 0
+     end
+ end
+ -- down
+ if btn(3) then
+    player.y += 1
+     if player.y > 128 then
+         player.y = 128
+     end
+ end
 
-    -- button 1
-    if btn(4) then
-    end
+ -- button 1
+ if btn(4) then
+ end
 
-    -- button 2
-    if btn(5) then
-    end
+ -- button 2
+ if btn(5) then
+ end
 end
 
--- Pico8 game funtions
+-- pico8 game funtions
 
 function _init()
-    cls()
+ cls()
 end
 
 function _update()
-    if state == game_states.splash then   
-        update_splash()
-    elseif state == game_states.game then
-        update_game() 
-    elseif state == game_states.gameover then
-        update_gameover()
-    end
+ if state == game_states.splash then
+     update_splash()
+ elseif state == game_states.game then
+     update_game()
+ elseif state == game_states.pause then
+     update_pause()
+ elseif state == game_states.gameover then
+     update_gameover()
+ end
 end
 
 function _draw()
-    cls()
-    if state == game_states.splash then   
-        draw_splash()
-    elseif state == game_states.game then
-        draw_game()
-    elseif state == game_states.gameover then
-        draw_gameover()
-    end
+ cls()
+ if state == game_states.splash then
+     draw_splash()
+ elseif state == game_states.game then
+     draw_game()
+ elseif state == game_states.pause then
+     draw_pause()
+ elseif state == game_states.gameover then
+     draw_gameover()
+ end
 end
 
 
--- SPLASH
+-- splash
 
 function update_splash()
-    -- usually we want the player to press one button
-    -- if btn(5) then 
-    --     change_state()
-    -- end
+ -- usually we want the player to press one button
+ -- if btn(5) then
+ --     change_state()
+ -- end
 end
 
-function draw_splash() 
-    rectfill(0,0,SCREEN_SIZE,SCREEN_SIZE,11)
-    local text = "hello world"
-    write(text, text_x_pos(text), 52,7)
+function draw_splash()
+ rectfill(0,0,screen_size,screen_size,11)
+ local text = "hello world"
+ write(text, text_x_pos(text), 52,7)
 end
 
--- GAME
+-- game
 
 function update_game()
 
 end
 
 function draw_game()
- 
+
 end
 
+-- pause
 
--- GAME OVER
+function update_pause()
+
+end
+
+function draw_pause()
+
+end
+
+-- game over
 
 function update_gameover()
 
@@ -160,43 +163,41 @@ function draw_gameover()
 
 end
 
--- Utils
+-- utils
 
--- Change this if you use a different resolution like 64x64
-SCREEN_SIZE = 128
+-- change this if you use a different resolution like 64x64
+screen_size = 128
 
-
--- calculate center position in X axis
+-- calculate center position in x axis
 -- this is asuming the text uses the system font which is 4px wide
 function text_x_pos(text)
-    local letter_width = 4
+ local letter_width = 4
 
-    -- first calculate how wide is the text
-    local width = #text * letter_width
-    
-    -- if it's wider than the screen then it's multiple lines so we return 0 
-    if width > SCREEN_SIZE then 
-        return 0 
-    end 
+ -- first calculate how wide is the text
+ local width = #text * letter_width
 
-   return SCREEN_SIZE / 2 - flr(width / 2)
+ -- if it's wider than the screen then it's multiple lines so we return 0
+ if width > screen_size then
+     return 0
+ end
 
+ return screen_size / 2 - flr(width / 2)
 end
 
 -- prints black bordered text
-function write(text,x,y,color) 
-    for i=0,2 do
-        for j=0,2 do
-            print(text,x+i,y+j, 0)
-        end
-    end
-    print(text,x+1,y+1,color)
-end 
+function write(text,x,y,color)
+ for i=0,2 do
+     for j=0,2 do
+         print(text,x+i,y+j, 0)
+     end
+ end
+ print(text,x+1,y+1,color)
+end
 
 
--- Returns if module of a/b == 0. Equals to a % b == 0 in other languages
+-- returns if module of a/b == 0. equals to a % b == 0 in other languages
 function mod_zero(a,b)
-   return a - flr(a/b)*b == 0
+ return a - flr(a/b)*b == 0
 end
 
 
@@ -330,6 +331,7 @@ __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+
 __gff__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
